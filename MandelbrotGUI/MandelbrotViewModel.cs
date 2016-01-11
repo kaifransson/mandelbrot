@@ -9,22 +9,22 @@ namespace MandelbrotGUI
 {
     public class MandelbrotViewModel : INotifyPropertyChanged
     {
-        private const int MandelbrotWidth = 1080;
+        private const int MandelbrotWidth = 1280;
         private const int MandelbrotHeight = 720;
 
         public MandelbrotViewModel()
         {
             Exit = new ExitCommand();
-            ComplexPlane = new ComplexUtil()
-                .GetComplexPlane(
-                    new Complex(-2.5, -1.8),
-                    new Complex(0.75, 1.8),
-                    MandelbrotImageSource.PixelWidth,
-                    MandelbrotImageSource.PixelHeight);
             RenderMandelbrot = new RenderMandelbrot(this);
         }
 
-        public Complex[] ComplexPlane { get; }
+        public Complex[] ComplexPlane => new ComplexUtil().GetComplexPlane(
+            Center - new Complex(16d/6, 9d/6),
+            Center + new Complex(16d/6, 9d/6),
+            MandelbrotImageSource.PixelWidth,
+            MandelbrotImageSource.PixelHeight);
+
+        private static Complex Center { get; } = new Complex(-0.5, 0);
 
         public ICommand Exit { get; }
         public ICommand RenderMandelbrot { get; }
@@ -39,6 +39,8 @@ namespace MandelbrotGUI
         public int IterationLimit { get; set; } = 100;
 
         public double RenderProgress { get; private set; }
+
+        public double ZoomLevel { get; set; } = 1;
 
         public event PropertyChangedEventHandler PropertyChanged;
 

@@ -21,6 +21,8 @@
             <StackPanel Orientation="Horizontal">
                 <Label>Iteration limit</Label>
                 <TextBox Text="{Binding IterationLimit, Source={StaticResource MandelbrotViewModel}}" PreviewTextInput="UIElement_OnPreviewTextInput"></TextBox>
+                <Label>Zoom level</Label>
+                <TextBox Text="{Binding ZoomLevel, Source={StaticResource MandelbrotViewModel}}"/>
                 <Button Command="{Binding RenderMandelbrot, Source={StaticResource MandelbrotViewModel}}">Render</Button>
             </StackPanel>
         </StackPanel>

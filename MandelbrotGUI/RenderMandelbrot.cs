@@ -5,7 +5,6 @@ using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Mandelbrot;
 
@@ -43,10 +42,9 @@ namespace MandelbrotGUI
             var renderTasks = new List<Task>();
             foreach (var chunk in Enumerable.Range(0, chunks))
             {
-                var renderTask = Task.Run(() =>
-                {
-                    return RenderChunk(chunk, chunkSize, bytesPerPixel, imageBytes, stride, pixelWidth);
-                });
+                var renderTask =
+                    Task.Run(
+                        () => { return RenderChunk(chunk, chunkSize, bytesPerPixel, imageBytes, stride, pixelWidth); });
                 var continuation = renderTask.ContinueWith(completedTask =>
                 {
                     var renderInfo = completedTask.Result;
@@ -99,8 +97,8 @@ namespace MandelbrotGUI
 
         private uint CalculateFancyGradient(Complex z, uint escapedAfter)
         {
-            var smooth = (escapedAfter + 1 - Math.Log(Math.Log(z.Magnitude)) / Math.Log(2)) / _iterationLimit;
-            return ((uint) (smooth * 0xFFFFFF) << 2*4) | 0xFF;
+            var smooth = (escapedAfter + 1 - Math.Log(Math.Log(z.Magnitude))/Math.Log(2))/_iterationLimit;
+            return ((uint) (smooth*0xFFFFFF) << 2*4) | 0xFF;
         }
 
         private static byte GetAlpha(uint pixelColor)
