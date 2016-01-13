@@ -16,58 +16,80 @@ namespace MandelbrotGUI
         private readonly MandelbrotViewModel _viewModel;
         private WriteableBitmap _bitmap;
         private IReadOnlyList<Complex> _complexPlane;
-        private int _iterationLimit;
+        private bool _isRendering;
+        private uint _iterationLimit;
 
         public RenderMandelbrot(MandelbrotViewModel viewModel)
         {
             _viewModel = viewModel;
         }
 
-        public bool CanExecute(object parameter)
+        private bool IsRendering
         {
-            return true;
+            get { return _isRendering; }
+            set
+            {
+                _isRendering = value;
+                CanExecuteChanged?.Invoke(this, new EventArgs());
+            }
         }
 
-        public void Execute(object parameter)
+        public bool CanExecute(object parameter)
         {
+            return !IsRendering;
+        }
+
+        public async void Execute(object parameter)
+        {
+            IsRendering = true;
             _complexPlane = _viewModel.ComplexPlane;
             _bitmap = _viewModel.MandelbrotImageSource;
             _iterationLimit = _viewModel.IterationLimit;
             var bytesPerPixel = _bitmap.Format.BitsPerPixel/8;
             var pixelWidth = _bitmap.PixelWidth;
+            var pixelHeight = _bitmap.PixelHeight;
             var stride = pixelWidth*bytesPerPixel;
             var imageBytes = new byte[stride*_bitmap.PixelHeight];
-            var chunks = _bitmap.PixelHeight;
-            var chunkSize = pixelWidth;
-            var renderTasks = new List<Task>();
-            foreach (var chunk in Enumerable.Range(0, chunks))
-            {
-                var renderTask =
-                    Task.Run(
-                        () => { return RenderChunk(chunk, chunkSize, bytesPerPixel, imageBytes, stride, pixelWidth); });
-                var continuation = renderTask.ContinueWith(completedTask =>
-                {
-                    var renderInfo = completedTask.Result;
-                    _bitmap.WritePixels(renderInfo.ImageRect, renderInfo.ImageBytes, stride, renderInfo.Offset);
-                    _viewModel.UpdateRenderProgress(100d/chunks);
-                }, TaskScheduler.FromCurrentSynchronizationContext());
-                renderTasks.Add(continuation);
-            }
-            Task.WhenAll(renderTasks).ContinueWith(allDone => _viewModel.ResetProgress());
+            var chunks = _bitmap.PixelHeight/(1 << 3);
+            var chunkSize = pixelWidth*pixelHeight/chunks;
+            var renderTasks = Enumerable.Range(0, chunks)
+                .Select(chunk => Task.Run(() =>
+                    RenderChunk(chunk, chunkSize, bytesPerPixel, imageBytes, pixelWidth)))
+                .Select(
+                    renderTask => renderTask.ContinueWith(
+                        OnRenderComplete(stride, chunks),
+                        TaskScheduler.FromCurrentSynchronizationContext()));
+            await Task.WhenAll(renderTasks);
+            _viewModel.ResetProgress();
+            IsRendering = false;
         }
-
 
         public event EventHandler CanExecuteChanged;
 
-        private RenderInfo RenderChunk(int chunk, int chunkSize, int bytesPerPixel, byte[] imageBytes, int stride,
+        private Action<Task<RenderInfo>> OnRenderComplete(int stride, int chunks)
+        {
+            return completedTask =>
+            {
+                var renderInfo = completedTask.Result;
+                _bitmap.WritePixels(renderInfo.ImageRect, renderInfo.ImageBytes, stride, renderInfo.Offset);
+                _viewModel.UpdateRenderProgress(100d/chunks);
+            };
+        }
+
+        private RenderInfo RenderChunk(int chunk, int chunkPixelSize, int bytesPerPixel, byte[] imageBytes,
             int pixelWidth)
         {
-            var chunkPixelIndex = chunk*chunkSize;
-            for (var pixel = chunkPixelIndex; pixel < chunkPixelIndex + chunkSize; pixel++)
+            var stride = pixelWidth*bytesPerPixel;
+            var chunkPixelIndex = chunk*chunkPixelSize;
+            for (var pixel = chunkPixelIndex; pixel < chunkPixelIndex + chunkPixelSize; pixel++)
             {
                 ColorPixel(pixel, bytesPerPixel, imageBytes);
             }
-            var imageRect = new Int32Rect(0, chunk, pixelWidth, 1);
+            var x = chunkPixelIndex%pixelWidth; // NOTE: this is wrong
+            var y = chunk*(chunkPixelSize/pixelWidth);
+            var width = pixelWidth;
+            var height = chunkPixelSize/pixelWidth;
+            var imageRect = new Int32Rect(x, y, width, height);
             var offset = chunkPixelIndex*bytesPerPixel;
             return new RenderInfo(imageRect, imageBytes, stride, offset);
         }
@@ -87,7 +109,7 @@ namespace MandelbrotGUI
             var result = _mandelbrotCalculator.IsMandelbrotNumber(_complexPlane[pixel], _iterationLimit);
             return result.IsMandelbrotNumber
                 ? MandelbrotColor()
-                : CalculateFancyGradient(result.Z, result.EscapedAfter);
+                : NonMandelbrotColor(result.Z, result.EscapedAfter);
         }
 
         private static uint MandelbrotColor()
@@ -95,10 +117,12 @@ namespace MandelbrotGUI
             return 0x000000FF;
         }
 
-        private uint CalculateFancyGradient(Complex z, uint escapedAfter)
+        private static uint NonMandelbrotColor(Complex z, uint escapedAfter)
         {
-            var smooth = (escapedAfter + 1 - Math.Log(Math.Log(z.Magnitude))/Math.Log(2))/_iterationLimit;
-            return ((uint) (smooth*0xFFFFFF) << 2*4) | 0xFF;
+            var smooth = Math.Log(Math.Log(escapedAfter))/Math.Log(escapedAfter);
+            var grayscale = smooth*0xFF;
+            var bgr = (uint) (grayscale == 1 ? 0xFFFFFF : grayscale*0xFFFFFF);
+            return (bgr << 8) | 0xFF;
         }
 
         private static byte GetAlpha(uint pixelColor)
@@ -135,6 +159,6 @@ namespace MandelbrotGUI
         public int Stride { get; }
         public int Offset { get; }
         public Int32Rect ImageRect { get; }
-        public byte[] ImageBytes { get; set; }
+        public byte[] ImageBytes { get; }
     }
 }

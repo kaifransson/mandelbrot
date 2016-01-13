@@ -26,6 +26,8 @@
                 <Button Command="{Binding RenderMandelbrot, Source={StaticResource MandelbrotViewModel}}">Render</Button>
             </StackPanel>
         </StackPanel>
-        <Image Source="{Binding MandelbrotImageSource, Source={StaticResource MandelbrotViewModel}}" />
+        <Image Source="{Binding MandelbrotImageSource, Source={StaticResource MandelbrotViewModel}}">
+            <!-- TODO: Fix some kind of drag/drop navigation -->
+        </Image>
     </DockPanel>
 </Window>

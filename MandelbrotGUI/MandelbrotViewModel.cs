@@ -14,19 +14,24 @@ namespace MandelbrotGUI
 
         public MandelbrotViewModel()
         {
-            Exit = new ExitCommand();
             RenderMandelbrot = new RenderMandelbrot(this);
         }
 
-        public Complex[] ComplexPlane => new ComplexUtil().GetComplexPlane(
-            Center - new Complex(16d/6, 9d/6),
-            Center + new Complex(16d/6, 9d/6),
-            MandelbrotImageSource.PixelWidth,
-            MandelbrotImageSource.PixelHeight);
+        public Complex[] ComplexPlane => UpdateComplexPlane(16d/3/ZoomLevel, 9d/3/ZoomLevel);
 
-        private static Complex Center { get; } = new Complex(-0.5, 0);
+        private Complex[] UpdateComplexPlane(double width, double height)
+        {
+            var centerOffset = new Complex(width/2, height/2);
+            return new ComplexUtil().GetComplexPlane(
+                Center - centerOffset,
+                Center + centerOffset,
+                MandelbrotImageSource.PixelWidth,
+                MandelbrotImageSource.PixelHeight);
+        }
 
-        public ICommand Exit { get; }
+        private static Complex Center { get; set; } = new Complex(-0.1564, -1.0320);
+
+        public ICommand Exit { get; } = new ExitCommand();
         public ICommand RenderMandelbrot { get; }
 
         public WriteableBitmap MandelbrotImageSource { get; } = new WriteableBitmap(
@@ -36,7 +41,7 @@ namespace MandelbrotGUI
             PixelFormats.Bgra32,
             null);
 
-        public int IterationLimit { get; set; } = 100;
+        public uint IterationLimit { get; set; } = 100;
 
         public double RenderProgress { get; private set; }
 
