@@ -5,28 +5,41 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MandelbrotGUI"
         xmlns:mandns="clr-namespace:Mandelbrot;assembly=Mandelbrot"
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
         Title="MainWindow" SizeToContent="WidthAndHeight">
     <Window.Resources>
-        <local:MandelbrotViewModel x:Key="MandelbrotViewModel"/>
+        <ObjectDataProvider MethodName="GetValues"
+                            ObjectType="{x:Type system:Enum}"
+                            x:Key="FractalTypesProvider">
+            <ObjectDataProvider.MethodParameters>
+                <x:Type TypeName="local:FractalType"/>
+            </ObjectDataProvider.MethodParameters>
+        </ObjectDataProvider>
+        <local:FractalViewModel x:Key="FractalViewModel"/>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
-                <MenuItem Name="MenuFileExit" Header="E_xit" Command="{Binding Exit, Source={StaticResource MandelbrotViewModel}}"/>
+                <MenuItem Name="MenuFileExit" Header="E_xit" Command="{Binding Exit, Source={StaticResource FractalViewModel}}"/>
             </MenuItem>
         </Menu>
         <StackPanel Orientation="Vertical" DockPanel.Dock="Bottom">
-            <ProgressBar Height="20" Value="{Binding RenderProgress, Mode=OneWay, Source={StaticResource MandelbrotViewModel}}"/>
+            <ProgressBar Height="20" Value="{Binding RenderProgress, Mode=OneWay, Source={StaticResource FractalViewModel}}"/>
             <StackPanel Orientation="Horizontal">
                 <Label>Iteration limit</Label>
-                <TextBox Text="{Binding IterationLimit, Source={StaticResource MandelbrotViewModel}}" PreviewTextInput="UIElement_OnPreviewTextInput"></TextBox>
+                <TextBox Width="120" Text="{Binding IterationLimit, Source={StaticResource FractalViewModel}}" PreviewTextInput="UIElement_OnPreviewTextInput"></TextBox>
                 <Label>Zoom level</Label>
-                <TextBox Text="{Binding ZoomLevel, Source={StaticResource MandelbrotViewModel}}"/>
-                <Button Command="{Binding RenderMandelbrot, Source={StaticResource MandelbrotViewModel}}">Render</Button>
+                <TextBox Width="120" Text="{Binding ZoomLevel, Source={StaticResource FractalViewModel}}"/>
+                <ComboBox Name="FractalTypeCombo"
+                          ItemsSource="{Binding Source={StaticResource FractalTypesProvider}}"
+                          SelectedItem="{Binding FractalType, Source={StaticResource FractalViewModel}}"
+                          Width="100">
+                </ComboBox>
+                <Button Command="{Binding RenderFractal, Source={StaticResource FractalViewModel}}">Render</Button>
             </StackPanel>
         </StackPanel>
-        <Image Source="{Binding MandelbrotImageSource, Source={StaticResource MandelbrotViewModel}}">
+        <Image Source="{Binding MandelbrotImageSource, Source={StaticResource FractalViewModel}}">
             <!-- TODO: Fix some kind of drag/drop navigation -->
         </Image>
     </DockPanel>

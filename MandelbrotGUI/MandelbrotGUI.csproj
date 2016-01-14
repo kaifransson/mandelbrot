@@ -57,7 +57,9 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ComplexUtil.cs" />
-    <Compile Include="RenderMandelbrot.cs" />
+    <Compile Include="FractalCalculatorFactory.cs" />
+    <Compile Include="FractalType.cs" />
+    <Compile Include="RenderFractal.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -73,7 +75,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MandelbrotViewModel.cs" />
+    <Compile Include="FractalViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

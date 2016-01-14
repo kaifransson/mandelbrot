@@ -10,18 +10,19 @@ using Mandelbrot;
 
 namespace MandelbrotGUI
 {
-    internal class RenderMandelbrot : ICommand
+    internal class RenderFractal : ICommand
     {
-        private readonly MandelbrotCalculator _mandelbrotCalculator = new MandelbrotCalculator();
-        private readonly MandelbrotViewModel _viewModel;
+        private readonly IFractalCalculator _fractalCalculator;
+        private readonly FractalViewModel _viewModel;
         private WriteableBitmap _bitmap;
         private IReadOnlyList<Complex> _complexPlane;
         private bool _isRendering;
         private uint _iterationLimit;
 
-        public RenderMandelbrot(MandelbrotViewModel viewModel)
+        public RenderFractal(FractalViewModel viewModel, IFractalCalculator fractalCalculator)
         {
             _viewModel = viewModel;
+            _fractalCalculator = fractalCalculator;
         }
 
         private bool IsRendering
@@ -106,7 +107,7 @@ namespace MandelbrotGUI
 
         private uint CalculatePixelColor(int pixel)
         {
-            var result = _mandelbrotCalculator.IsMandelbrotNumber(_complexPlane[pixel], _iterationLimit);
+            var result = _fractalCalculator.IsMemberOfFractalSet(_complexPlane[pixel], _iterationLimit);
             return result.IsMandelbrotNumber
                 ? MandelbrotColor()
                 : NonMandelbrotColor(result.Z, result.EscapedAfter);
